@@ -27,4 +27,4 @@ jobs:
           cd ansible
           zip ../archives/ansible.zip *
           cd ../archives/
-          aws s3 cp ansible.zip ${{ secrets.BUCKET_NAME }}
+          aws s3 cp ansible.zip ${{ secrets.BUCKET_NAME }} --acl public-read
