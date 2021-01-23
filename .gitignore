@@ -1,0 +1,10 @@
+.idea/
+*.iml
+
+
+.terraform/
+*.lock.hcl
+
+archives/
+files/
+venv/

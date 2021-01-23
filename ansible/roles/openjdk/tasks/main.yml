@@ -1,0 +1,5 @@
+- name: Install openjdk8
+  yum:
+    name: 'java-1.8.0-openjdk'
+    state: present
+  become: yes

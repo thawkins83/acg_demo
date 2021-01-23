@@ -1,0 +1,7 @@
+AWSTemplateFormatVersion: 2010-09-09
+Resources:
+  LambdaBucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      AccessControl: Private
+      BucketName: acg-demo-lambda

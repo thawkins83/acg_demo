@@ -1,0 +1,118 @@
+AWSTemplateFormatVersion: 2010-09-09
+Resources:
+  LambdaRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: '/service-role/'
+      RoleName: 'ansible-lambda-role'
+  LambdaPolicyDocument:
+    Type: 'AWS::IAM::Policy'
+    DependsOn: LambdaRole
+    Properties:
+      PolicyName: ansible-lambda-policy
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - 'ssm:*'
+              - 'ec2:DescribeInstances'
+              - 'ec2:CreateTags'
+            Resource: '*'
+          - Effect: Allow
+            Action:
+              - 'logs:CreateLogGroup'
+              - 'logs:CreateLogStream'
+              - 'logs:PutLogEvents'
+            Resource: 'arn:aws:logs:*:*:*'
+      Roles:
+        - !Ref LambdaRole
+  LambdaFunction:
+    Type: 'AWS::Lambda::Function'
+    DependsOn: [
+        LambdaRole,
+        LambdaPolicyDocument
+    ]
+    Properties:
+      Role: !GetAtt LambdaRole.Arn
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.8
+      FunctionName: ansible-provisioning
+      Timeout: 15
+      MemorySize: 128
+      Code:
+        S3Bucket: 'ansible-lambda-bucket-acg-demo'
+        S3Key: lambda.zip
+      Environment:
+        Variables:
+          code_bucket: acg-demo-ansible
+  LambdaEventInvokeConfig:
+    Type: 'AWS::Lambda::EventInvokeConfig'
+    DependsOn: LambdaFunction
+    Properties:
+      FunctionName: !Ref LambdaFunction
+      MaximumRetryAttempts: 1
+      Qualifier: "$LATEST"
+  SnsTopic:
+    Type: 'AWS::SNS::Topic'
+    DependsOn: LambdaFunction
+    Properties:
+      Subscription:
+        - Endpoint: !GetAtt LambdaFunction.Arn
+          Protocol: "lambda"
+      TopicName: "ansible-sns-topic"
+      DisplayName: "Ansible SNS Topic"
+  TopicPolicyDocument:
+    Type: 'AWS::SNS::TopicPolicy'
+    DependsOn: SnsTopic
+    Properties:
+      PolicyDocument:
+        Id: 'SnsTopicPolicy'
+        Version: '2012-10-17'
+        Statement:
+          - Sid: '__default_statement_ID'
+            Effect: Allow
+            Action:
+              - 'sns:Subscribe'
+              - 'sns:SetTopicAttributes'
+              - 'sns:RemovePermission'
+              - 'sns:Receive'
+              - 'sns:Publish'
+              - 'sns:ListSubscriptionsByTopic'
+              - 'sns:GetTopicAttributes'
+              - 'sns:DeleteTopic'
+              - 'sns:AddPermission'
+            Resource: !Ref SnsTopic
+            Condition:
+              StringEquals:
+                AWS:SourceOwner: !Ref "AWS::AccountId"
+            Principal:
+              AWS:
+                - '*'
+          - Sid: 'CloudwatchEventPublish'
+            Effect: Allow
+            Action:
+              - 'sns:Publish'
+            Resource: !Ref SnsTopic
+            Principal:
+              Service:
+                - 'events.amazonaws.com'
+      Topics:
+        - !Ref SnsTopic
+  LambdaSnsPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt LambdaFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: s3.amazonaws.com
+      SourceAccount: !Ref 'AWS::AccountId'
+      SourceArn: !Ref SnsTopic

@@ -1,0 +1,9 @@
+- name: Download AWS Inspector install file
+  get_url:
+    url: "https://inspector-agent.amazonaws.com/linux/latest/install"
+    dest: "/tmp/aws-inspector-install"
+    mode: '0755'
+
+- name: Intall AWS Inspector
+  become: yes
+  shell: "bash /tmp/aws-inspector-install"

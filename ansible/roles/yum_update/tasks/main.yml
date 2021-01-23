@@ -1,0 +1,5 @@
+- name: Yum update
+  yum:
+    name: '*'
+    state: latest
+  become: yes
