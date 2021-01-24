@@ -4,6 +4,7 @@
 
 .terraform/
 *.lock.hcl
+*.tfstate*
 
 archives/
 files/

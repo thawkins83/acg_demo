@@ -48,7 +48,7 @@ data "aws_iam_policy_document" "lambda_assume_role_policy_document" {
 
 data "aws_iam_policy_document" "sns_topic_policy" {
   statement {
-    sid       = "CloudwatchEventPublish"
+    sid       = "CloudwatchEventsPublish"
     actions   = [
       "sns:Publish"
     ]
@@ -56,10 +56,9 @@ data "aws_iam_policy_document" "sns_topic_policy" {
     resources = [
       aws_sns_topic.sns_topic.arn
     ]
+
     principals {
-      identifiers = [
-        "events.amazonaws.com"
-      ]
+      identifiers = ["events.amazonaws.com"]
       type        = "Service"
     }
   }
@@ -67,32 +66,33 @@ data "aws_iam_policy_document" "sns_topic_policy" {
   statement {
     sid       = "__default_statement_ID"
     actions   = [
-      "sns:Subscribe",
-      "sns:SetTopicAttributes",
-      "sns:RemovePermission",
-      "sns:Receive",
-      "sns:Publish",
-      "sns:ListSubscriptionsByTopic",
-      "sns:GetTopicAttributes",
-      "sns:DeleteTopic",
-      "sns:AddPermission"
+      "SNS:Subscribe",
+      "SNS:SetTopicAttributes",
+      "SNS:RemovePermission",
+      "SNS:Receive",
+      "SNS:Publish",
+      "SNS:ListSubscriptionsByTopic",
+      "SNS:GetTopicAttributes",
+      "SNS:DeleteTopic",
+      "SNS:AddPermission",
     ]
     effect    = "Allow"
     resources = [
-      aws_sns_topic.sns_topic.arn
+      aws_sns_topic.sns_topic.arn,
     ]
+
     condition {
       test      = "StringEquals"
+      variable  = "AWS:SourceOwner"
+
       values    = [
         data.aws_caller_identity.current.account_id
       ]
-      variable  = "AWS:SourceOwner"
     }
+
     principals {
-      identifiers = [
-        "*"
-      ]
       type        = "AWS"
+      identifiers = ["*"]
     }
   }
 }

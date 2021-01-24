@@ -41,9 +41,9 @@ def lambda_handler(event, context):
 
 
 def process_event(instance_id, state, playbook):
-    ssm_client = boto3.client('sms')
+    ssm_client = boto3.client('ssm')
     instance_association_name = 'ansible-association-{}'.format(instance_id)
-    status_infos = ssm_client.describe_instance_association_status(
+    status_infos = ssm_client.describe_instance_associations_status(
         InstanceId=instance_id
     )
     association = status_infos['InstanceAssociationStatusInfos']
@@ -81,7 +81,7 @@ def get_association_id(ssm_client, instance_id, instance_association_name):
 
 def create_association(ssm_client, playbook, instance_id, instance_association_name):
     response = ssm_client.create_association(
-        Name='AWS-ApplyAnsiblePlaybook',
+        Name='AWS-ApplyAnsiblePlaybooks',
         AssociationName=instance_association_name,
         Targets=[
             {

@@ -10,9 +10,9 @@ resource "aws_iam_policy" "lambda_policy" {
 }
 
 resource "aws_iam_policy_attachment" "lambda_role_policy_attachment" {
-  name = "ansible-lambda-policy-attachment"
-  policy_arn = aws_iam_policy.lambda_policy.arn
-  roles = [
+  name        = "ansible-lambda-policy-attachment"
+  policy_arn  = aws_iam_policy.lambda_policy.arn
+  roles       = [
     aws_iam_role.lambda_role.name
   ]
 }
@@ -30,6 +30,11 @@ resource "aws_lambda_function" "lambda_function" {
   publish           = true
   timeout           = 15
   memory_size       = 128
+  environment {
+    variables = {
+      code_bucket = "acg-demo-ansible"
+    }
+  }
 }
 
 resource "aws_lambda_function_event_invoke_config" "lambda_event_invoke_config" {
@@ -51,9 +56,9 @@ resource "aws_sns_topic_subscription" "sns_topic_subscription" {
     aws_lambda_function.lambda_function,
     aws_sns_topic.sns_topic
   ]
-  endpoint  = aws_lambda_function.lambda_function.arn
-  protocol  = "lambda"
   topic_arn = aws_sns_topic.sns_topic.arn
+  protocol  = "lambda"
+  endpoint  = aws_lambda_function.lambda_function.arn
 }
 
 resource "aws_sns_topic_policy" "sns_topic_policy" {
@@ -65,35 +70,35 @@ resource "aws_sns_topic_policy" "sns_topic_policy" {
 }
 
 resource "aws_cloudwatch_event_rule" "cloudwatch_event" {
-  name = "ansible-instance-state"
-  description = "Capture when instance stage changes to apply Ansible code"
+  name          = "ansible-instance-state"
+  description   = "Capture when instance stage changes to apply Ansible code"
   event_pattern = <<EOF
 {
-  "source": [
-    "aws.ec2"
-  ],
-  "detail-type": [
-    "EC2 Instance State-change Notification"
-  ],
-  "detail": {
-    "state": [
-      "running",
-      "stopped",
-      "terminated"
-    ]
-  }
+    "source": [
+        "aws.ec2"
+    ],
+    "detail-type": [
+        "EC2 Instance State-change Notification"
+    ],
+    "detail": {
+        "state": [
+            "running",
+            "stopped",
+            "terminated"
+        ]
+    }
 }
 EOF
 }
 
 resource "aws_cloudwatch_event_target" "sns_target" {
   depends_on = [
-    aws_sns_topic.sns_topic,
+    aws_lambda_function.lambda_function,
     aws_cloudwatch_event_rule.cloudwatch_event
   ]
-  arn       = aws_sns_topic.sns_topic.arn
   rule      = aws_cloudwatch_event_rule.cloudwatch_event.name
   target_id = "TriggerTarget"
+  arn       = aws_sns_topic.sns_topic.arn
 }
 
 resource "aws_lambda_permission" "sns_permission" {
@@ -101,9 +106,8 @@ resource "aws_lambda_permission" "sns_permission" {
     aws_lambda_function.lambda_function,
     aws_sns_topic.sns_topic
   ]
-  action          = "lambda:InvokeFunction"
-  function_name   = aws_lambda_function.lambda_function.function_name
-  principal       = "sns.amazonaws.com"
-  source_account  = data.aws_caller_identity.current.account_id
-  source_arn      = aws_sns_topic.sns_topic.arn
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.lambda_function.function_name
+  principal     = "sns.amazonaws.com"
+  source_arn    = aws_sns_topic.sns_topic.arn
 }

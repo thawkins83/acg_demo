@@ -3,10 +3,6 @@
   connection: local
   gather_facts: true
   become: yes
-  tasks:
-    - name: yum update
-      import_role:
-        name: yum_update
-    - name: Install AWS Inspector
-      import_role:
-        name: aws_inspector
+  roles:
+    - yum_update
+    - aws_inspector

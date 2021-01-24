@@ -3,7 +3,5 @@
   connection: local
   gather_facts: true
   become: yes
-  tasks:
-    - name: yum update
-      import_role:
-        name: yum_update
+  roles:
+    - yum_update

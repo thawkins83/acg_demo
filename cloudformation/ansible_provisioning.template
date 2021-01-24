@@ -50,7 +50,7 @@ Resources:
       Timeout: 15
       MemorySize: 128
       Code:
-        S3Bucket: 'ansible-lambda-bucket-acg-demo'
+        S3Bucket: 'acg-demo-lambda'
         S3Key: lambda.zip
       Environment:
         Variables:
@@ -82,15 +82,15 @@ Resources:
           - Sid: '__default_statement_ID'
             Effect: Allow
             Action:
-              - 'sns:Subscribe'
-              - 'sns:SetTopicAttributes'
-              - 'sns:RemovePermission'
-              - 'sns:Receive'
-              - 'sns:Publish'
-              - 'sns:ListSubscriptionsByTopic'
-              - 'sns:GetTopicAttributes'
-              - 'sns:DeleteTopic'
-              - 'sns:AddPermission'
+              - 'SNS:Subscribe'
+              - 'SNS:SetTopicAttributes'
+              - 'SNS:RemovePermission'
+              - 'SNS:Receive'
+              - 'SNS:Publish'
+              - 'SNS:ListSubscriptionsByTopic'
+              - 'SNS:GetTopicAttributes'
+              - 'SNS:DeleteTopic'
+              - 'SNS:AddPermission'
             Resource: !Ref SnsTopic
             Condition:
               StringEquals:
@@ -113,6 +113,25 @@ Resources:
     Properties:
       FunctionName: !GetAtt LambdaFunction.Arn
       Action: lambda:InvokeFunction
-      Principal: s3.amazonaws.com
+      Principal: sns.amazonaws.com
       SourceAccount: !Ref 'AWS::AccountId'
       SourceArn: !Ref SnsTopic
+  EventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: "Capture when instance stage changes to apply Ansible code"
+      Name: "ansible-instance-state"
+      EventPattern:
+        source:
+          - "aws.ec2"
+        detail-type:
+          - "EC2 Instance State-change Notification"
+        detail:
+          state:
+            - "running"
+            - "stopped"
+            - "terminated"
+      State: "ENABLED"
+      Targets:
+        - Arn: !Ref SnsTopic
+          Id: "TriggerTarget"
