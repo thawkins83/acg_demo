@@ -66,11 +66,14 @@ Resources:
     Type: 'AWS::SNS::Topic'
     DependsOn: LambdaFunction
     Properties:
-      Subscription:
-        - Endpoint: !GetAtt LambdaFunction.Arn
-          Protocol: "lambda"
       TopicName: "ansible-sns-topic"
       DisplayName: "Ansible SNS Topic"
+  SnsSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Endpoint: !GetAtt LambdaFunction.Arn
+      Protocol: "lambda"
+      TopicArn: !Ref SnsTopic
   TopicPolicyDocument:
     Type: 'AWS::SNS::TopicPolicy'
     DependsOn: SnsTopic

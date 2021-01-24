@@ -1,0 +1,67 @@
+AWSTemplateFormatVersion: 2010-09-09
+Parameters:
+  InstanceTypeParameter:
+    Type: String
+    Default: t3.micro
+    AllowedValues:
+      - t3.micro
+      - t3.small
+      - t3.medium
+    Description: Enter t3.micro, t3.small, or t3.mediom. Default is t3.micro.
+  ImageIdParameter:
+    Type: String
+    Default: ami-0be2609ba883822ec
+    Description: Enter AMI Image Id.
+Resources:
+  Ec2InstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: '/'
+      Description: 'Allows EC2 instances to call AWS services on your behalf.'
+      RoleName: 'ec2-ssm-role'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore'
+        - 'arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess'
+  Ec2InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        -
+          !Ref Ec2InstanceRole
+      Path: '/'
+      InstanceProfileName: 'ec2-ssm-role'
+  InspectorInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceTypeParameter
+      ImageId: !Ref ImageIdParameter
+      IamInstanceProfile: !Ref Ec2InstanceProfile
+      Tags:
+        - Key: 'ManagedBy'
+          Value: 'Ansible'
+        - Key: 'Playbook'
+          Value: 'inspector-playbook.yml'
+        - Key: 'Name'
+          Value: 'InspectorInstance'
+  YumrInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceTypeParameter
+      ImageId: !Ref ImageIdParameter
+      IamInstanceProfile: !Ref Ec2InstanceProfile
+      Tags:
+        - Key: 'ManagedBy'
+          Value: 'Ansible'
+        - Key: 'Playbook'
+          Value: 'yum-only-playbook.yml'
+        - Key: 'Name'
+          Value: 'YumInstance'
