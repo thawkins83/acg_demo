@@ -25,6 +25,6 @@ jobs:
         run: |
           mkdir archives
           cd ansible
-          zip -r ./archives/ansible.zip *
+          zip -r ../archives/ansible.zip *
           cd ../archives/
           aws s3 cp ansible.zip ${{ secrets.BUCKET_NAME }} --acl public-read
