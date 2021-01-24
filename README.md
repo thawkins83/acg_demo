@@ -2,9 +2,10 @@ Preparation
 ```shell
 mkdir archives
 cd ansible
-zip ../archives/ansible.zip *
+zip -r ../archives/ansible.zip *
 cd ../lambda
 zip ../archives/lambda.zip *
+cd ..
 
 ```
 
