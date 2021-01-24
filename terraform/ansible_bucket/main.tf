@@ -1,4 +1,4 @@
 resource "aws_s3_bucket" "ansible_bucket" {
-  bucket = "ansible-${data.aws_caller_identity.current.account_id}"
+  bucket = "acg-demo-lambda"
   acl    = "private"
 }

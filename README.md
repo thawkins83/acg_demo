@@ -28,6 +28,9 @@ cd cloudformation
 aws --profile acg_demo --region us-east-1 cloudformation delete-stack --stack-name ansible-provisioning
 aws --profile <profile_name> --region us-east-1 cloudformation delete-stack --stack-name ansible-provisioning
 
+aws --profile acg_demo --region us-east-1 s3 rm s3://acg-demo-lambda --recursive
+aws --profile <profile_name> --region us-east-1 s3 rm s3://<lambda_bucket_name> --recursive
+
 aws --profile acg_demo --region us-east-1 cloudformation delete-stack --stack-name ansible-bucket
 aws --profile <profile_name> --region us-east-1 cloudformation delete-stack --stack-name ansible-bucket
 ```

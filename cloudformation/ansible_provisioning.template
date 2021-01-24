@@ -15,10 +15,10 @@ Resources:
       Path: '/service-role/'
       RoleName: 'ansible-lambda-role'
   LambdaPolicyDocument:
-    Type: 'AWS::IAM::Policy'
+    Type: 'AWS::IAM::ManagedPolicy'
     DependsOn: LambdaRole
     Properties:
-      PolicyName: ansible-lambda-policy
+      ManagedPolicyName: ansible-lambda-policy
       PolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -98,7 +98,7 @@ Resources:
             Principal:
               AWS:
                 - '*'
-          - Sid: 'CloudwatchEventPublish'
+          - Sid: 'CloudwatchEventsPublish'
             Effect: Allow
             Action:
               - 'sns:Publish'
@@ -114,7 +114,6 @@ Resources:
       FunctionName: !GetAtt LambdaFunction.Arn
       Action: lambda:InvokeFunction
       Principal: sns.amazonaws.com
-      SourceAccount: !Ref 'AWS::AccountId'
       SourceArn: !Ref SnsTopic
   EventRule:
     Type: AWS::Events::Rule
