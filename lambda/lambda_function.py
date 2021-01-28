@@ -14,9 +14,10 @@ def lambda_handler(event, context):
     message = json.loads(sns_message)
     instance_id = message['detail']['instance-id']
     state = message['detail']['state']
+    region = message['region']
 
     if state == running or state == terminated or state == stopped:
-        ec2_client = boto3.client('ec2')
+        ec2_client = boto3.client('ec2', region_name=region)
         instance = ec2_client.describe_instances(
             InstanceIds=[
                 instance_id
@@ -37,11 +38,11 @@ def lambda_handler(event, context):
                 if tag['Key'] == 'Playbook':
                     playbook = tag['Value']
             if playbook is not None:
-                process_event(instance_id, state, playbook)
+                process_event(instance_id, state, playbook, region)
 
 
-def process_event(instance_id, state, playbook):
-    ssm_client = boto3.client('ssm')
+def process_event(instance_id, state, playbook, region):
+    ssm_client = boto3.client('ssm', region_name=region)
     instance_association_name = 'ansible-association-{}'.format(instance_id)
     status_infos = ssm_client.describe_instance_associations_status(
         InstanceId=instance_id
