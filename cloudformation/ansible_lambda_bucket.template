@@ -5,3 +5,9 @@ Resources:
     Properties:
       AccessControl: Private
       BucketName: acg-demo-lambda
+Outputs:
+  LambdaBucket:
+    Value: !Ref LambdaBucket
+    Description: Lambda Bucket
+    Export:
+      Name: LambdaBucket

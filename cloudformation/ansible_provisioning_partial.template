@@ -50,7 +50,7 @@ Resources:
       Timeout: 15
       MemorySize: 128
       Code:
-        S3Bucket: 'acg-demo-lambda'
+        S3Bucket: !ImportValue LambdaBucket
         S3Key: lambda.zip
       Environment:
         Variables:
@@ -62,78 +62,34 @@ Resources:
       FunctionName: !Ref LambdaFunction
       MaximumRetryAttempts: 1
       Qualifier: "$LATEST"
-  SnsTopic:
-    Type: 'AWS::SNS::Topic'
-    DependsOn: LambdaFunction
+  Ec2InstanceRole:
+    Type: AWS::IAM::Role
     Properties:
-      TopicName: "ansible-sns-topic"
-      DisplayName: "Ansible SNS Topic"
-  SnsSubscription:
-    Type: AWS::SNS::Subscription
-    Properties:
-      Endpoint: !GetAtt LambdaFunction.Arn
-      Protocol: "lambda"
-      TopicArn: !Ref SnsTopic
-  TopicPolicyDocument:
-    Type: 'AWS::SNS::TopicPolicy'
-    DependsOn: SnsTopic
-    Properties:
-      PolicyDocument:
-        Id: 'SnsTopicPolicy'
-        Version: '2012-10-17'
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
         Statement:
-          - Sid: '__default_statement_ID'
-            Effect: Allow
-            Action:
-              - 'SNS:Subscribe'
-              - 'SNS:SetTopicAttributes'
-              - 'SNS:RemovePermission'
-              - 'SNS:Receive'
-              - 'SNS:Publish'
-              - 'SNS:ListSubscriptionsByTopic'
-              - 'SNS:GetTopicAttributes'
-              - 'SNS:DeleteTopic'
-              - 'SNS:AddPermission'
-            Resource: !Ref SnsTopic
-            Condition:
-              StringEquals:
-                AWS:SourceOwner: !Ref "AWS::AccountId"
-            Principal:
-              AWS:
-                - '*'
-          - Sid: 'CloudwatchEventsPublish'
-            Effect: Allow
-            Action:
-              - 'sns:Publish'
-            Resource: !Ref SnsTopic
+          - Effect: Allow
             Principal:
               Service:
-                - 'events.amazonaws.com'
-      Topics:
-        - !Ref SnsTopic
-  LambdaSnsPermission:
-    Type: AWS::Lambda::Permission
+                - ec2.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: '/'
+      Description: 'Allows EC2 instances to call AWS services on your behalf.'
+      RoleName: 'ec2-ssm-role'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore'
+        - 'arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess'
+  Ec2InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
     Properties:
-      FunctionName: !GetAtt LambdaFunction.Arn
-      Action: lambda:InvokeFunction
-      Principal: sns.amazonaws.com
-      SourceArn: !Ref SnsTopic
-  EventRule:
-    Type: AWS::Events::Rule
-    Properties:
-      Description: "Capture when instance stage changes to apply Ansible code"
-      Name: "ansible-instance-state"
-      EventPattern:
-        source:
-          - "aws.ec2"
-        detail-type:
-          - "EC2 Instance State-change Notification"
-        detail:
-          state:
-            - "running"
-            - "stopped"
-            - "terminated"
-      State: "ENABLED"
-      Targets:
-        - Arn: !Ref SnsTopic
-          Id: "TriggerTarget"
+      Roles:
+        - !Ref Ec2InstanceRole
+      Path: '/'
+      InstanceProfileName: 'ec2-ssm-role'
+Outputs:
+  Ec2SsmInstanceProfile:
+    Value: !Ref Ec2InstanceProfile
+    Description: EC2 Instance Profile
+    Export:
+      Name: Ec2SsmInstanceProfile

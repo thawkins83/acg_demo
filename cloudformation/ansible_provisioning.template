@@ -50,7 +50,7 @@ Resources:
       Timeout: 15
       MemorySize: 128
       Code:
-        S3Bucket: 'acg-demo-lambda'
+        S3Bucket: !ImportValue LambdaBucket
         S3Key: lambda.zip
       Environment:
         Variables:
@@ -137,3 +137,34 @@ Resources:
       Targets:
         - Arn: !Ref SnsTopic
           Id: "TriggerTarget"
+  Ec2InstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: '/'
+      Description: 'Allows EC2 instances to call AWS services on your behalf.'
+      RoleName: 'ec2-ssm-role'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore'
+        - 'arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess'
+  Ec2InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref Ec2InstanceRole
+      Path: '/'
+      InstanceProfileName: 'ec2-ssm-role'
+Outputs:
+  Ec2SsmInstanceProfile:
+    Value: !Ref Ec2InstanceProfile
+    Description: EC2 Instance Profile
+    Export:
+      Name: Ec2SsmInstanceProfile

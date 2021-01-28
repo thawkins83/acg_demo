@@ -13,38 +13,16 @@ Parameters:
     Default: ami-0be2609ba883822ec
     Description: Enter AMI Image Id.
 Resources:
-  Ec2InstanceRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - ec2.amazonaws.com
-            Action:
-              - 'sts:AssumeRole'
-      Path: '/'
-      Description: 'Allows EC2 instances to call AWS services on your behalf.'
-      RoleName: 'ec2-ssm-role'
-      ManagedPolicyArns:
-        - 'arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore'
-        - 'arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess'
-  Ec2InstanceProfile:
-    Type: AWS::IAM::InstanceProfile
-    Properties:
-      Roles:
-        -
-          !Ref Ec2InstanceRole
-      Path: '/'
-      InstanceProfileName: 'ec2-ssm-role'
   InspectorInstance:
     Type: AWS::EC2::Instance
     Properties:
       InstanceType: !Ref InstanceTypeParameter
       ImageId: !Ref ImageIdParameter
-      IamInstanceProfile: !Ref Ec2InstanceProfile
+      IamInstanceProfile: !ImportValue Ec2SsmInstanceProfile
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          yum install -y python2-pip
       Tags:
         - Key: 'ManagedBy'
           Value: 'Ansible'
@@ -52,12 +30,16 @@ Resources:
           Value: 'inspector-playbook.yml'
         - Key: 'Name'
           Value: 'InspectorInstance'
-  YumrInstance:
+  YumInstance:
     Type: AWS::EC2::Instance
     Properties:
       InstanceType: !Ref InstanceTypeParameter
       ImageId: !Ref ImageIdParameter
-      IamInstanceProfile: !Ref Ec2InstanceProfile
+      IamInstanceProfile: !ImportValue Ec2SsmInstanceProfile
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          yum install -y python2-pip
       Tags:
         - Key: 'ManagedBy'
           Value: 'Ansible'
