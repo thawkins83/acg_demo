@@ -1,9 +1,8 @@
+git clone git@github.com:thawkins83/acg_demo.git
+
 Preparation
 ```shell
-mkdir archives
-cd lambda
-zip ../archives/lambda.zip *
-cd ..
+./create_zip.sh
 
 ```
 
@@ -16,10 +15,12 @@ aws --profile <profile_name> --region us-east-1 cloudformation deploy --stack-na
 
 aws --profile acg_demo --region us-east-1 cloudformation deploy --stack-name ansible-lambda-bucket --template-file cloudformation/ansible_lambda_bucket.template
 aws --profile acg_demo --region us-east-1 s3 cp archives/lambda.zip s3://acg-demo-lambda/lambda.zip
-aws --profile acg_demo --region us-east-1 cloudformation deploy --stack-name ansible-provisioning --template-file cloudformation/ansible_provisioning_partial.template --capabilities CAPABILITY_NAMED_IAM --parameter-overrides BucketStackName=ansible-bucket
+aws --profile acg_demo --region us-east-1 cloudformation deploy --stack-name ansible-provisioning --template-file cloudformation/ansible_provisioning.template --capabilities CAPABILITY_NAMED_IAM --parameter-overrides BucketStackName=ansible-bucket
 aws --profile acg_demo --region us-east-1 cloudformation deploy --stack-name ec2-instances --template-file cloudformation/ec2_instances.template --capabilities CAPABILITY_NAMED_IAM
 
 ```
+/opt/aws/awsagent/bin/awsagent status
+
 
 Delete stacks
 ```shell
